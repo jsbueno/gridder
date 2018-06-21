@@ -6,8 +6,6 @@ foreground = (255, 255, 255)
 background = (0, 0, 0)
 contour = (0, 128, 255)
 
-LIVE = (2, 3)
-BORN = (3,)
 FLAGS = 0 # pygame.FULLSCREEN
 
 col, row = 64, 48
@@ -16,7 +14,7 @@ screen = pygame.display.set_mode((W, H), FLAGS)
 
 sizex = width / col
 sizey = height / row
-color_index = 0
+grid_index = 0
 paused = False
 
 
@@ -25,6 +23,16 @@ class GameOver(Exception):
 
 
 class Grid(dict):
+    survive = (2, 3)
+    born = (3,)
+    color = (0, 0, 0)
+    
+    def __init__(self, color, survive=None, born=None):
+        self.color = color
+        self.survive = self.survive if survive is None else survive
+        self.born = self.born if born is None else born
+        
+    
     def __iter__(self):
         for x in range(col):
             for y in range(row):
@@ -42,18 +50,29 @@ class Grid(dict):
             total += self[c]
         return total
 
+    def update_cells(self):
 
-grids = [Grid(), Grid(), Grid()]
+        new_grid = dict()
+        for coord, element in self:
+            n = self.neighbour_count(coord)
+            if (element and n in self.survive) or n in self.born:
+                new_grid[coord] = 1
+        self.clear()
+        self.update(new_grid)
 
 
-def square(coord, cor):
+grids = [Grid((255, 0, 0)), Grid((0, 255, 0)), Grid((0, 0, 255))]
+
+
+def square(coord, color):
     x, y = coord
 
-    pygame.draw.rect(screen, cor, (x * sizex, y * sizey, sizex, sizey))
+    pygame.draw.rect(screen, color, (x * sizex, y * sizey, sizex, sizey))
     pygame.draw.rect(screen, contour, (x * sizex, y * sizey, sizex, sizey), 2)
 
 
 def populate():
+    return
     for grid in grids:
         for coord, elemento in grid:
              grid[coord] = random.random() < 0.1
@@ -61,23 +80,14 @@ def populate():
 
 def draw():
     screen.fill(background)
-    for rc, gc, bc in zip(*grids):
-        coord = rc[0]
-        r = rc[1]; g = gc[1]; b = bc[1]
-        cor = (255 * r, 255 * g, 255 * b)
-        square(coord, cor)
+    colors = [grid.color for grid in grids]
+    for cells in zip(*grids):
+        coord = cells[0][0]
+        color = tuple(min(255, sum(cell[1] * color[component] for cell, color in zip(cells, colors)))  for component in (0,1,2))
+        square(coord, color)
     pygame.display.flip()
 
 
-def update(grid):
-
-    nova_grid = Grid()
-    for coord, elemento in grid:
-        n = grid.neighbour_count(coord)
-        if elemento and n in LIVE or n in BORN:
-            nova_grid[coord] = 1
-    grid.clear()
-    grid.update(nova_grid)
 
 
 def click(event):
@@ -91,13 +101,13 @@ def click(event):
     x = px // sizex
     y = py // sizey
     if event.type == pygame.MOUSEMOTION:
-        grids[color_index][x, y] = 1
+        grids[grid_index][x, y] = 1
     else:
-        grids[color_index][x, y] ^= 1
+        grids[grid_index][x, y] ^= 1
 
 
 def main():
-    global paused, color_index
+    global paused, grid_index
     populate()
     while True:
         pygame.event.pump()
@@ -111,11 +121,11 @@ def main():
                 click(event)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
-                    color_index = (color_index + 1) % 3
+                    grid_index = (grid_index + 1) % len(grids)
         draw()
         for grid in grids:
             if not paused:
-                update(grid)
+                grid.update_cells()
         pygame.time.delay(125)
 
 
