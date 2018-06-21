@@ -75,7 +75,8 @@ def atualiza(grade):
 color_index = 0
 def click(event):
 
-    if not event.buttons[0]:
+    buttons = event.buttons[0] if hasattr(event, "buttons") else event.button == 1
+    if not buttons:
         return
 
     pixel_coord = event.pos
@@ -94,11 +95,11 @@ def principal():
 
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == 0x1b:
                 raise GameOver
-            elif event.type == pygame.KEYDOWN and event.unicode == "P":
+            elif event.type == pygame.KEYDOWN and event.unicode == "p":
                 paused = not paused
-            elif event.type == pygame.MOUSEMOTION:
+            if event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEMOTION):
                 click(event)
-            elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
                     color_index = (color_index + 1) % 3
         desenha()
