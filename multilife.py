@@ -1,32 +1,39 @@
 import random
 import pygame
 
-larg, alt = W, H = 1024, 768
-frente = (255, 255, 255)
-fundo = (0, 0, 0)
-contorno = (0, 128, 255)
+width, height = W, H = 1024, 768
+foreground = (255, 255, 255)
+background = (0, 0, 0)
+contour = (0, 128, 255)
 
-VIVE = (2, 3)
-NASCE = (3,)
+LIVE = (2, 3)
+BORN = (3,)
 FLAGS = 0 # pygame.FULLSCREEN
 
-col, lin = 64, 48
-tela = pygame.display.set_mode((W, H), FLAGS)
+col, row = 64, 48
+screen = pygame.display.set_mode((W, H), FLAGS)
 
 
-tamx = larg / col
-tamy = alt / lin
+sizex = width / col
+sizey = height / row
+color_index = 0
+paused = False
 
-class Grade(dict):
+
+class GameOver(Exception):
+    pass
+
+
+class Grid(dict):
     def __iter__(self):
         for x in range(col):
-            for y in range(lin):
+            for y in range(row):
                 yield (x,y), self[x,y]
 
     def __missing__(self, index):
         return 0
 
-    def conta_vizinhos(self, coords):
+    def neighbour_count(self, coords):
         x, y = coords
         total = 0
         for c in [(x - 1, y - 1), (x, y - 1), (x + 1, y -1),
@@ -35,44 +42,44 @@ class Grade(dict):
             total += self[c]
         return total
 
-grades = [Grade(), Grade(), Grade()]
 
-# A função quadrado faz todas as contas de coordenadas
+grids = [Grid(), Grid(), Grid()]
 
-def quadrado(coord, cor):
+
+def square(coord, cor):
     x, y = coord
 
-    pygame.draw.rect(tela, cor, (x * tamx, y * tamy, tamx, tamy))
-    pygame.draw.rect(tela, contorno, (x * tamx, y * tamy, tamx, tamy), 2)
+    pygame.draw.rect(screen, cor, (x * sizex, y * sizey, sizex, sizey))
+    pygame.draw.rect(screen, contour, (x * sizex, y * sizey, sizex, sizey), 2)
 
-def cria():
-    for grade in grades:
-        for coord, elemento in grade:
-             grade[coord] = random.random() < 0.1
 
-def desenha():
-    tela.fill(fundo)
-    for rc, gc, bc in zip(*grades):
+def populate():
+    for grid in grids:
+        for coord, elemento in grid:
+             grid[coord] = random.random() < 0.1
+
+
+def draw():
+    screen.fill(background)
+    for rc, gc, bc in zip(*grids):
         coord = rc[0]
         r = rc[1]; g = gc[1]; b = bc[1]
         cor = (255 * r, 255 * g, 255 * b)
-        quadrado(coord, cor)
+        square(coord, cor)
     pygame.display.flip()
 
-class GameOver(Exception):
-    pass
 
-def atualiza(grade):
+def update(grid):
 
-    nova_grade = Grade()
-    for coord, elemento in grade:
-        n = grade.conta_vizinhos(coord)
-        if elemento and n in VIVE or n in NASCE:
-            nova_grade[coord] = 1
-    grade.clear()
-    grade.update(nova_grade)
+    nova_grid = Grid()
+    for coord, elemento in grid:
+        n = grid.neighbour_count(coord)
+        if elemento and n in LIVE or n in BORN:
+            nova_grid[coord] = 1
+    grid.clear()
+    grid.update(nova_grid)
 
-color_index = 0
+
 def click(event):
 
     buttons = event.buttons[0] if hasattr(event, "buttons") else event.button == 1
@@ -81,14 +88,14 @@ def click(event):
 
     pixel_coord = event.pos
     px, py = pixel_coord
-    x = px // tamx
-    y = py // tamy
-    grades[color_index][x, y] = 1
+    x = px // sizex
+    y = py // sizey
+    grids[color_index][x, y] = 1
 
-paused = False
-def principal():
+
+def main():
     global paused, color_index
-    cria()
+    populate()
     while True:
         pygame.event.pump()
         for event in pygame.event.get():
@@ -102,14 +109,15 @@ def principal():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 3:
                     color_index = (color_index + 1) % 3
-        desenha()
-        for grade in grades:
+        draw()
+        for grid in grids:
             if not paused:
-                atualiza(grade)
+                update(grid)
         pygame.time.delay(125)
 
+
 try:
-    principal()
+    main()
 except GameOver:
     pass
 finally:
