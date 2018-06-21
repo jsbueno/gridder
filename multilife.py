@@ -1,4 +1,5 @@
 import random
+import sys
 import pygame
 
 width, height = W, H = 1024, 768
@@ -32,7 +33,6 @@ class Grid(dict):
         self.survive = self.survive if survive is None else survive
         self.born = self.born if born is None else born
         
-    
     def __iter__(self):
         for x in range(col):
             for y in range(row):
@@ -61,7 +61,7 @@ class Grid(dict):
         self.update(new_grid)
 
 
-grids = [Grid((255, 0, 0)), Grid((0, 255, 0)), Grid((0, 0, 255))]
+grids = [Grid((255, 0, 0)), Grid((0, 255, 0)), Grid((0, 0, 255)), Grid((255, 128, 0)), Grid((255, 255, 255))]
 
 
 def square(coord, color):
@@ -72,10 +72,15 @@ def square(coord, color):
 
 
 def populate():
-    return
+    if len(sys.argv) < 2:
+        print("Put a coeficient as parameter if you want to randomly pre-populate the grids")
+        return
+
+    threshold = float(sys.argv[1])
+    
     for grid in grids:
         for coord, elemento in grid:
-             grid[coord] = random.random() < 0.1
+             grid[coord] = random.random() < threshold
 
 
 def draw():
