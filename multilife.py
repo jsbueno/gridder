@@ -90,7 +90,10 @@ def click(event):
     px, py = pixel_coord
     x = px // sizex
     y = py // sizey
-    grids[color_index][x, y] = 1
+    if event.type == pygame.MOUSEMOTION:
+        grids[color_index][x, y] = 1
+    else:
+        grids[color_index][x, y] ^= 1
 
 
 def main():
